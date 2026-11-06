@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Unfold / AI & Design</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <a class="wordmark" href="./index.html" aria-label="Unfold home"><span class="mark" aria-hidden="true">◈</span> UNFOLD<span class="slash">/</span></a>
+      <span class="edition">AI & DESIGN <span>—</span> MOTION STUDIES 001–003</span>
+      <a class="overlay-link" href="./overlay.html" target="_blank" rel="noopener">Open transparent overlay <span aria-hidden="true">↗</span></a>
+    </header>
+    <section class="intro">
+      <div class="intro-copy"><p class="eyebrow">FROM A SINGLE POINT, EVERYTHING OPENS.</p><h1>Knowledge.<br><em>In a new dimension.</em></h1></div>
+      <div class="intro-aside"><span class="tiny-label">THE ORIGAMI EXPERIMENT</span><p>An expanding impulse.<br>Eight routes. A world of ideas.</p><span class="small-meta">104 hinged tiles · 29 resources · 1 epicenter</span></div>
+    </section>
+    <section class="motion" aria-label="Origami animation preview">
+      <div class="stage-toolbar"><div class="live-caption"><span class="status-dot"></span><span id="stage-label">01 — EPICENTER</span></div><div class="background-picker" aria-label="Preview background"><button type="button" class="swatch paper selected" data-background="paper" aria-label="Paper background" aria-pressed="true"></button><button type="button" class="swatch grid" data-background="grid" aria-label="Transparency checkerboard" aria-pressed="false"></button><button type="button" class="swatch ink" data-background="ink" aria-label="Ink background" aria-pressed="false"></button><span>PREVIEW BACKGROUND</span></div></div>
+      <div class="stage-shell" data-background="paper"><div id="stage"></div><div id="loading" role="status">Preparing the paper…</div></div>
+      <div class="transport">
+        <button id="play" class="play" type="button" disabled>Play</button>
+        <div class="timeline"><label for="timeline" class="sr-only">Animation position</label><input id="timeline" type="range" min="0" max="7" step="0.01" value="0"><div class="ticks"><span id="elapsed">00.00</span><span id="duration-readout">07.00 SEC</span></div></div>
+        <div id="pan-tools" class="pan-tools" hidden><span>Scroll or pinch to zoom · drag to pan</span><div class="zoom-controls"><button id="zoom-out" type="button" aria-label="Zoom out" disabled>−</button><output id="zoom-level" aria-label="Zoom level">100%</output><button id="zoom-in" type="button" aria-label="Zoom in">+</button><button id="reset-view" type="button" disabled>Reset view</button></div></div>
+        <div class="transport-options"><label class="duration-label" for="duration">TEMPO <select id="duration"><option value="5">5 seconds</option><option value="7" selected>7 seconds</option><option value="10">10 seconds</option></select></label><button id="sound" type="button" class="sound" aria-pressed="false"><span aria-hidden="true">◌</span> Sound off</button></div>
+      </div>
+    </section>
+    <section class="studies" aria-label="Choose a motion study">
+      <button type="button" class="study selected" data-variant="wave" aria-pressed="true"><div class="study-top"><span class="study-number">01</span><span class="study-diagram radial" aria-hidden="true"><i></i><i></i><i></i></span><span class="study-arrow" aria-hidden="true">↗</span></div><h2>Epicenter</h2><p>A clean radial impulse. The original tiles hinge open, followed by a wake of resources.</p><span class="study-tag">RADIAL / PRECISE / PAPER</span></button>
+      <button type="button" class="study" data-variant="cascade" aria-pressed="false"><div class="study-top"><span class="study-number">02</span><span class="study-diagram cascade" aria-hidden="true"><i></i><i></i><i></i></span><span class="study-arrow" aria-hidden="true">↗</span></div><h2>Route cascade</h2><p>Eight branches catch the wave in quick succession. Sharp flips. A syncopated finish.</p><span class="study-tag">STACCATO / RELAY / SNAP</span></button>
+      <button type="button" class="study" data-variant="bloom" aria-pressed="false"><div class="study-top"><span class="study-number">03</span><span class="study-diagram bloom" aria-hidden="true"><i></i><i></i><i></i></span><span class="study-arrow" aria-hidden="true">↗</span></div><h2>Spiral bloom</h2><p>The board begins as a folded constellation and spirals out into its final arrangement.</p><span class="study-tag">SCULPTURAL / EXPANSIVE / PLAYFUL</span></button>
+    </section>
+    <footer><span>THE ORIGINAL BOARD, REIMAGINED IN MOTION.</span><span>TRANSPARENT CANVAS <span class="footer-dot">•</span> THREE.JS <span class="footer-dot">•</span> SYNTHESIZED PAPER SOUND</span></footer>
+    <p id="status" class="sr-only" aria-live="polite"></p>
+  </main>
+  <script type="module" src="./viewer.js"></script>
+</body>
+</html>

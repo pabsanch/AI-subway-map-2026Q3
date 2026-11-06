@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Origami board — transparent overlay</title><link rel="icon" href="data:,"><style>html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}#origami{width:100%;height:100%}#error{font:14px system-ui;color:#705a83;padding:20px}</style></head>
+<body><div id="origami"></div><p id="error" role="alert" hidden></p>
+<script type="module">
+import {OrigamiBoard} from './animation.js';
+const params=new URLSearchParams(location.search);
+const variants=['wave','cascade','bloom'];
+try{
+  const board=new OrigamiBoard(document.getElementById('origami'),{variant:variants.includes(params.get('variant'))?params.get('variant'):'wave',duration:Number(params.get('duration'))||7,pan:params.get('pan')!=='false',zoom:params.get('zoom')!=='false'});
+  window.origami=board;
+  await board.ready;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)board.seek(board.duration);
+  else if(params.get('autoplay')!=='false')board.play();
+  window.addEventListener('pagehide',()=>board.destroy(),{once:true});
+}catch(error){const e=document.getElementById('error');e.hidden=false;e.textContent='Unable to initialize WebGL animation.';console.error(error);}
+</script></body></html>

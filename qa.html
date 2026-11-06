@@ -1,0 +1,94 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Origami verification</title><link rel="icon" href="data:,"><style>body{font:14px system-ui;margin:24px;background:#f5f3f8;color:#352044}#stage{width:1000px;height:600px;max-width:100%;background:conic-gradient(#e8e4ec 25%,#fff 0 50%,#e8e4ec 0 75%,#fff 0);background-size:20px 20px}pre{white-space:pre-wrap}img{max-width:100%}button{padding:12px;margin:12px 0}</style></head><body><h1>Origami verification</h1><div id="stage"></div><pre id="results">Running…</pre><div id="snapshots"></div><button id="download" disabled>Download motion contact sheet</button><script type="module">
+import {OrigamiBoard} from './animation.js';
+const results=[];
+const assert=(name,pass,detail='')=>{results.push({name,pass,detail});document.getElementById('results').textContent=JSON.stringify(results,null,2);};
+try{
+const board=new OrigamiBoard(document.getElementById('stage'));
+const errors=[];board.renderer.debug.onShaderError=()=>errors.push('Shader compilation failed');
+await board.ready;
+const gl=board.renderer.getContext();
+const pixels=()=>{board.render();const w=gl.drawingBufferWidth,h=gl.drawingBufferHeight,out=new Uint8Array(w*h*4);gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,out);return out;};
+const digest=arr=>{let n=0;for(let i=0;i<arr.length;i+=17)n=(Math.imul(n,31)+arr[i])|0;return n;};
+const coverage=arr=>{let n=0;for(let i=3;i<arr.length;i+=4)if(arr[i]>10)n++;return n;};
+assert('WebGL alpha channel',gl.getContextAttributes().alpha);
+board.seek(0);assert('Initial frame fully transparent',coverage(pixels())===0);
+const finals=[],midpoints=[];
+const sheet=document.createElement('canvas');sheet.width=1500;sheet.height=1060;
+const ctx=sheet.getContext('2d');ctx.fillStyle='#f6f5f2';ctx.fillRect(0,0,sheet.width,sheet.height);
+ctx.fillStyle='#332241';ctx.font='32px system-ui';ctx.fillText('UNFOLD / Three origami wave studies',40,56);
+const images=[];
+let row=0;
+for(const variant of ['wave','cascade','bloom']){
+ board.setVariant(variant);board.seek(3.1);
+ const frame=pixels();midpoints.push(digest(frame));assert(variant+' visible halfway',coverage(frame)>3000);
+ ctx.fillStyle='#fff';ctx.fillRect(30,90+row*310,1440,290);
+ ctx.drawImage(board.renderer.domElement,30,90+row*310,483,290);
+ board.seek(4.5);ctx.drawImage(board.renderer.domElement,513,90+row*310,483,290);
+ board.seek(7);finals.push(digest(pixels()));ctx.drawImage(board.renderer.domElement,996,90+row*310,483,290);
+ ctx.fillStyle='#78638a';ctx.font='14px system-ui';ctx.fillText(['01 / Epicenter','02 / Route cascade','03 / Spiral bloom'][row],40,90+row*310+283);
+ const end=pixels();assert(variant+' transparent final corners',end[3]===0&&end[end.length-1]===0);
+ row++;
+}
+assert('Three distinct unfolding frames',new Set(midpoints).size===3,JSON.stringify(midpoints));
+assert('Identical final artwork in all variants',new Set(finals).size===1,JSON.stringify(finals));
+for(const duration of [5,7,10]){board.setDuration(duration);board.seek(duration);assert(duration+' second ending',board.time===duration&&board.final.visible);}
+assert('Shaders compiled',errors.length===0);
+assert('One draw call when settled',board.renderer.info.render.calls===1,'Draw calls: '+board.renderer.info.render.calls);
+const centered=digest(pixels());
+board.panBy(80,40);assert('Pan follows the drag direction',board.group.position.x>0&&board.group.position.y<0&&digest(pixels())!==centered);
+board.resetPan();assert('Reset restores the centered rendering',digest(pixels())===centered);
+board.panBy(100000,100000);assert('Bounded pan keeps artwork visible',coverage(pixels())>100);
+board.resetPan();
+const canvas=board.renderer.domElement;
+canvas.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight'}));assert('Keyboard pan',board.pan.x>0);
+canvas.dispatchEvent(new KeyboardEvent('keydown',{key:'Home'}));assert('Home recenters',board.pan.lengthSq()===0);
+board.seek(3);board.panBy(80,40);assert('Panning waits for completed unfolding',board.pan.lengthSq()===0&&canvas.style.touchAction==='auto');
+board.seek(board.duration);assert('Touch panning is enabled after unfolding',canvas.style.touchAction==='none'&&canvas.style.cursor==='grab');
+board.panEnabled=false;board.panBy(80,40);assert('Decorative overlay can disable pan',board.pan.lengthSq()===0);board.panEnabled=true;
+board.panBy(80,40);board.setVariant('wave');assert('Changing studies recenters the board',board.pan.lengthSq()===0);
+board.seek(board.duration);
+const rect=canvas.getBoundingClientRect();
+const anchor={x:rect.left+rect.width*.7,y:rect.top+rect.height*.4};
+const viewHeight=2*Math.tan(board.camera.fov*Math.PI/360)*board.camera.position.z;
+const anchorWorld={x:(anchor.x-rect.left-rect.width/2)*viewHeight/rect.height,y:(rect.height/2-(anchor.y-rect.top))*viewHeight/rect.height};
+board.zoomAt(3,anchor.x,anchor.y);
+assert('Cursor anchor stays fixed during zoom',Math.abs((anchorWorld.x-board.pan.x)/board.zoom-anchorWorld.x)<.00001&&Math.abs((anchorWorld.y-board.pan.y)/board.zoom-anchorWorld.y)<.00001);
+assert('Zoom changes the rendered scale',board.group.scale.x===3&&digest(pixels())!==centered);
+const wheel=new WheelEvent('wheel',{deltaY:-100,clientX:anchor.x,clientY:anchor.y,cancelable:true});
+canvas.dispatchEvent(wheel);assert('Mouse wheel zooms and prevents page scrolling',board.zoom>3&&wheel.defaultPrevented);
+const trackpad=new WheelEvent('wheel',{deltaY:-10,ctrlKey:true,clientX:anchor.x,clientY:anchor.y,cancelable:true});
+const beforeTrackpad=board.zoom;canvas.dispatchEvent(trackpad);assert('Trackpad pinch zooms',board.zoom>beforeTrackpad&&trackpad.defaultPrevented);
+board.zoomAt(100);assert('Zoom has a maximum',board.zoom===12);
+board.zoomAt(.01);assert('Zoom stops at full-board scale',board.zoom===1);
+board.resetView();assert('Reset view restores scale and position',board.zoom===1&&board.pan.lengthSq()===0&&digest(pixels())===centered);
+// Synthetic touch input exercises the pointer handlers; native pointer capture requires real hardware input.
+const setCapture=canvas.setPointerCapture;canvas.setPointerCapture=()=>{};
+const touch=(type,id,x,y)=>canvas.dispatchEvent(new PointerEvent(type,{pointerId:id,pointerType:'touch',isPrimary:id===101,button:0,clientX:x,clientY:y,cancelable:true}));
+try{
+ const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+ touch('pointerdown',101,cx-40,cy);touch('pointerdown',102,cx+40,cy);
+ touch('pointermove',101,cx-80,cy);touch('pointermove',102,cx+80,cy);
+ assert('Two-finger pinch expands the board',Math.abs(board.zoom-2)<.00001&&board.pointers.size===2);
+ touch('pointerup',102,cx+80,cy);
+ const beforeDrag=board.pan.x;touch('pointermove',101,cx-60,cy);
+ assert('Pinch continues as one-finger pan',board.pan.x>beforeDrag&&board.pointers.size===1);
+ touch('pointercancel',101,cx-60,cy);assert('Canceled gestures release all pointers',board.pointers.size===0);
+}finally{canvas.setPointerCapture=setCapture;board.endDrag();}
+board.resetView();canvas.dispatchEvent(new KeyboardEvent('keydown',{key:'+'}));assert('Keyboard zoom',board.zoom>1);
+canvas.dispatchEvent(new KeyboardEvent('keydown',{key:'Home'}));assert('Home resets zoom and position',board.zoom===1&&board.pan.lengthSq()===0);
+board.seek(3);board.zoomAt(3);assert('Zoom waits for the completed unfolding',board.zoom===1);
+board.seek(board.duration);board.zoomAt(5);board.panBy(50,20);board.setVariant('bloom');assert('Switching studies resets zoom',board.zoom===1&&board.pan.lengthSq()===0);
+board.seek(board.duration);board.zoomEnabled=false;board.zoomAt(5);assert('Decorative overlay can disable zoom',board.zoom===1);board.zoomEnabled=true;
+board.resetView();
+const download=document.getElementById('download');download.disabled=false;
+const inspect=document.createElement('button');inspect.textContent='Preview readable title';
+inspect.addEventListener('click',()=>{
+ board.seek(board.duration);board.resetView();board.zoomAt(10);
+ board.pan.set(-(3069.42-5749/2)*18/5749*10,-(3259/2-1624.66)*18/5749*10);board.render();
+});
+document.getElementById('stage').after(inspect);
+download.addEventListener('click',()=>{const a=document.createElement('a');a.download='origami-motion-studies.png';a.href=sheet.toDataURL('image/png');a.click();});
+const image=new Image();image.src=sheet.toDataURL();image.alt='Three unfolding approaches, each at three stages.';document.getElementById('snapshots').append(image);
+document.title=results.every(r=>r.pass)?'PASS — Origami verification':'FAIL — Origami verification';
+}catch(error){assert('Runtime',false,error.stack);document.title='FAIL — Origami verification';}
+</script></body></html>
